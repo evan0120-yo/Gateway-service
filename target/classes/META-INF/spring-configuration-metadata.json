@@ -1,0 +1,22 @@
+{
+  "groups": [
+    {
+      "name": "rsa",
+      "type": "com.gln.gateway.config.RsaConfigurationProperties",
+      "sourceType": "com.gln.gateway.config.RsaConfigurationProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "rsa.private-key",
+      "type": "java.security.interfaces.RSAPrivateKey",
+      "sourceType": "com.gln.gateway.config.RsaConfigurationProperties"
+    },
+    {
+      "name": "rsa.public-key",
+      "type": "java.security.interfaces.RSAPublicKey",
+      "sourceType": "com.gln.gateway.config.RsaConfigurationProperties"
+    }
+  ],
+  "hints": []
+}
