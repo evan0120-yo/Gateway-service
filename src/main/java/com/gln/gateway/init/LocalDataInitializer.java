@@ -43,27 +43,36 @@ public class LocalDataInitializer {
     }
 
     private void saveAdminAccount() {
-        Role adminRole = Role.builder().authority("ADMIN").build();
+        // Check and save ADMIN role
+        Role adminRole = roleRepository.findByAuthority("ADMIN")
+                .orElseGet(() -> roleRepository.save(Role.builder().authority("ADMIN").build()));
+
+        // Check and save USER role
+        Role userRole = roleRepository.findByAuthority("USER")
+                .orElseGet(() -> roleRepository.save(Role.builder().authority("USER").build()));
+
         Set<Role> roles = new HashSet<>();
         roles.add(adminRole);
-        roleRepository.save(adminRole);
-
-        Role userRole = Role.builder().authority("USER").build();
         roles.add(userRole);
-        roleRepository.save(userRole);
 
-        Account admin = Account.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("12345678"))
-                .roles(roles)
-                .build();
-        accountRepository.save(admin);
+        // Check and save admin account
+        if (accountRepository.findByUsername("admin").isEmpty()) {
+            Account admin = Account.builder()
+                    .username("admin")
+                    .password(passwordEncoder.encode("12345678"))
+                    .roles(roles)
+                    .build();
+            accountRepository.save(admin);
+        }
 
-        Account testUser = Account.builder()
-                .username("test")
-                .password(passwordEncoder.encode("12345678"))
-                .roles(roles)
-                .build();
-        accountRepository.save(testUser);
+        // Check and save test user
+        if (accountRepository.findByUsername("test").isEmpty()) {
+            Account testUser = Account.builder()
+                    .username("test")
+                    .password(passwordEncoder.encode("12345678"))
+                    .roles(roles)
+                    .build();
+            accountRepository.save(testUser);
+        }
     }
 }

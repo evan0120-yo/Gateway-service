@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,14 +31,14 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 
 @Configuration
-@EnableWebSecurity
+@EnableWebFluxSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RsaConfigurationProperties rsaConfigurationProperties;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          RsaConfigurationProperties rsaConfigurationProperties) {
+            RsaConfigurationProperties rsaConfigurationProperties) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.rsaConfigurationProperties = rsaConfigurationProperties;
     }
@@ -59,32 +59,31 @@ public class SecurityConfig {
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
         return http
-            .csrf(ServerHttpSecurity.CsrfSpec::disable)
-            .authorizeExchange(auth -> auth
-                .pathMatchers("/account/login/**").permitAll()
-                .pathMatchers("/account/register/**").permitAll()
-                .pathMatchers("/actuator/**").permitAll()
-                .pathMatchers("/test/**").authenticated()
-                .pathMatchers("/admin/**").hasRole("ADMIN")
-                .pathMatchers("/user/**").hasAnyRole("ADMIN", "USER")
-                .anyExchange().authenticated()
-            )
-            .addFilterBefore(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
-            .build();
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(auth -> auth
+                        .pathMatchers("/account/login/**").permitAll()
+                        .pathMatchers("/account/register/**").permitAll()
+                        .pathMatchers("/actuator/**").permitAll()
+                        .pathMatchers("/test/**").authenticated()
+                        .pathMatchers("/admin/**").hasRole("ADMIN")
+                        .pathMatchers("/user/**").hasAnyRole("ADMIN", "USER")
+                        .anyExchange().authenticated())
+                .addFilterBefore(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+                .build();
     }
 
     @Bean
     public ReactiveJwtDecoder reactiveJwtDecoder() {
         return NimbusReactiveJwtDecoder
-            .withSecretKey(new SecretKeySpec("your-secret-key".getBytes(), "HMACSHA256"))
-            .build();
+                .withSecretKey(new SecretKeySpec("your-secret-key".getBytes(), "HMACSHA256"))
+                .build();
     }
 
     @Bean
     public JwtEncoder jwtEncoder() {
         JWK jwk = new RSAKey.Builder(rsaConfigurationProperties.publicKey())
-            .privateKey(rsaConfigurationProperties.privateKey())
-            .build();
+                .privateKey(rsaConfigurationProperties.privateKey())
+                .build();
         JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
         return new NimbusJwtEncoder(jwks);
     }
