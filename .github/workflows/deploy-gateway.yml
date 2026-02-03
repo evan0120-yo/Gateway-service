@@ -86,7 +86,7 @@ jobs:
             -e DB_HOST=$(aws ssm get-parameter --name /gateway/prod/DB_HOST --query Parameter.Value --output text) \
             -e DB_USER=$(aws ssm get-parameter --name /gateway/prod/DB_USER --with-decryption --query Parameter.Value --output text) \
             -e DB_PASSWORD=$(aws ssm get-parameter --name /gateway/prod/DB_PASSWORD --with-decryption --query Parameter.Value --output text) \
-            -e NACOS_HOST=$(aws ssm get-parameter --name /gateway/prod/NACOS_HOST --query Parameter.Value --output text) \
+            -e NACOS_SERVER_ADDR=$(aws ssm get-parameter --name /gateway/prod/NACOS_HOST --query Parameter.Value --output text):8848 \
             ${{ secrets.ECR_REGISTRY }}/gateway-service:latest
           
           # Cleanup old images
