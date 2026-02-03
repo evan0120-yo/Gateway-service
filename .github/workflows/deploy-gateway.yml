@@ -54,12 +54,7 @@ jobs:
     - name: Add Runner IP to Bastion Security Group
       run: |
         echo "Adding ${{ steps.runner-ip.outputs.ip }}/32 to Security Group ${{ env.BASTION_SG_ID }}"
-        aws ec2 authorize-security-group-ingress \
-          --group-id ${{ env.BASTION_SG_ID }} \
-          --protocol tcp \
-          --port 22 \
-          --cidr ${{ steps.runner-ip.outputs.ip }}/32 \
-          --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=github-actions-temp}]'
+        aws ec2 authorize-security-group-ingress --group-id ${{ env.BASTION_SG_ID }} --protocol tcp --port 22 --cidr ${{ steps.runner-ip.outputs.ip }}/32
     # === 動態 IP 白名單 - 結束 ===
 
     - name: Deploy to EC2 instances
