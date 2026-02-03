@@ -9,6 +9,7 @@ on:
 env:
   ECR_REPOSITORY: gateway-service
   IMAGE_TAG: ${{ github.sha }}
+  BASTION_SG_ID: sg-01f2c2fb10d92ac64
 
 jobs:
   build-and-deploy:
@@ -45,6 +46,22 @@ jobs:
         docker push ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
         docker push ${{ secrets.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:latest
 
+    # === 動態 IP 白名單 - 開始 ===
+    - name: Get GitHub Actions Runner IP
+      id: runner-ip
+      run: echo "ip=$(curl -s https://api.ipify.org)" >> $GITHUB_OUTPUT
+
+    - name: Add Runner IP to Bastion Security Group
+      run: |
+        echo "Adding ${{ steps.runner-ip.outputs.ip }}/32 to Security Group ${{ env.BASTION_SG_ID }}"
+        aws ec2 authorize-security-group-ingress \
+          --group-id ${{ env.BASTION_SG_ID }} \
+          --protocol tcp \
+          --port 22 \
+          --cidr ${{ steps.runner-ip.outputs.ip }}/32 \
+          --tag-specifications 'ResourceType=security-group-rule,Tags=[{Key=Name,Value=github-actions-temp}]'
+    # === 動態 IP 白名單 - 結束 ===
+
     - name: Deploy to EC2 instances
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -79,3 +96,14 @@ jobs:
           
           # Cleanup old images
           docker image prune -f
+
+    # === 清理動態 IP - 無論成功失敗都執行 ===
+    - name: Remove Runner IP from Bastion Security Group
+      if: always()
+      run: |
+        echo "Removing ${{ steps.runner-ip.outputs.ip }}/32 from Security Group ${{ env.BASTION_SG_ID }}"
+        aws ec2 revoke-security-group-ingress \
+          --group-id ${{ env.BASTION_SG_ID }} \
+          --protocol tcp \
+          --port 22 \
+          --cidr ${{ steps.runner-ip.outputs.ip }}/32 || true
